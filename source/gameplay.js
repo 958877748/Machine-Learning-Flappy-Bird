@@ -59,6 +59,7 @@ App.Main.prototype = {
 		// set the gravity of the world
 		this.game.physics.arcade.gravity.y = 1300;
 		
+		// 创建一个新的遗传算法 10代表总人口 4代表能活到下一代的人口
 		// create a new Genetic Algorithm with a population of 10 units which will be evolving by using 4 top units
 		this.GA = new GeneticAlgorithm(10, 4);
 		
