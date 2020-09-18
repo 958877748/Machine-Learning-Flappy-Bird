@@ -236,6 +236,8 @@ class GeneticAlgorithm {
 	 * @param {*} parentB
 	 */
 	crossOver(parentA, parentB) {
+		console.log('parentA', parentA)
+		console.log('parentB', parentB)
 		// 找一个交叉点
 		// get a cross over cutting point
 		var cutPoint = this.random(0, parentA.neurons.length - 1)

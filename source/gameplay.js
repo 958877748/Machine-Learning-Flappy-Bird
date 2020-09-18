@@ -42,20 +42,25 @@ App.Main.prototype = {
 	},
 	
 	create : function(){
+		// 设置缩放模式以覆盖整个屏幕
 		// set scale mode to cover the entire screen
 		this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 		this.scale.pageAlignVertically = true;
 		this.scale.pageAlignHorizontally = true;
 
+		// 为舞台的背景设置一个蓝色
 		// set a blue color for the background of the stage
 		this.game.stage.backgroundColor = "#89bfdc";
 		
+		// 如果游戏失去焦点，继续游戏
 		// keep game running if it loses the focus
 		this.game.stage.disableVisibilityChange = true;
 		
+		// 启动Phaser arcade物理引擎
 		// start the Phaser arcade physics engine
 		this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
+		// 设定世界的引力
 		// set the gravity of the world
 		this.game.physics.arcade.gravity.y = 1300;
 		
