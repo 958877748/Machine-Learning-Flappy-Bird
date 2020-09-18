@@ -50,95 +50,100 @@ export default class Trainer {
 	}
 
 	// trains any given set to a network
+	/**
+	 * 训练
+	 * @param {*} set 数据集
+	 * @param {*} options 设置
+	 */
 	train(set, options) {
-		var error = 1;
-		var iterations = bucketSize = 0;
-		var abort = false;
-		var currentRate;
-		var cost = options && options.cost || this.cost || Trainer.cost.MSE;
-		var crossValidate = false, testSet, trainSet;
+		var error = 1
+		var iterations = bucketSize = 0
+		var abort = false
+		var currentRate
+		var cost = options && options.cost || this.cost || Trainer.cost.MSE
+		var crossValidate = false, testSet, trainSet
 
-		var start = Date.now();
+		var start = Date.now()
 
 		if (options) {
 			if (options.iterations)
-				this.iterations = options.iterations;
+				this.iterations = options.iterations
 			if (options.error)
-				this.error = options.error;
+				this.error = options.error
 			if (options.rate)
-				this.rate = options.rate;
+				this.rate = options.rate
 			if (options.cost)
-				this.cost = options.cost;
+				this.cost = options.cost
 			if (options.schedule)
-				this.schedule = options.schedule;
+				this.schedule = options.schedule
 			if (options.customLog) {
 				// for backward compatibility with code that used customLog
 				console.log('Deprecated: use schedule instead of customLog')
-				this.schedule = options.customLog;
+				this.schedule = options.customLog
 			}
 			if (this.crossValidate || options.crossValidate) {
-				if (!this.crossValidate) this.crossValidate = {};
-				crossValidate = true;
+				if (!this.crossValidate) this.crossValidate = {}
+				crossValidate = true
 				if (options.crossValidate.testSize)
-					this.crossValidate.testSize = options.crossValidate.testSize;
+					this.crossValidate.testSize = options.crossValidate.testSize
 				if (options.crossValidate.testError)
-					this.crossValidate.testError = options.crossValidate.testError;
+					this.crossValidate.testError = options.crossValidate.testError
 			}
 		}
 
-		currentRate = this.rate;
+		currentRate = this.rate
 		if (Array.isArray(this.rate)) {
-			var bucketSize = Math.floor(this.iterations / this.rate.length);
+			var bucketSize = Math.floor(this.iterations / this.rate.length)
 		}
 
 		if (crossValidate) {
-			var numTrain = Math.ceil((1 - this.crossValidate.testSize) * set.length);
-			trainSet = set.slice(0, numTrain);
-			testSet = set.slice(numTrain);
+			var numTrain = Math.ceil((1 - this.crossValidate.testSize) * set.length)
+			trainSet = set.slice(0, numTrain)
+			testSet = set.slice(numTrain)
 		}
 
 		var lastError = 0;
 		while ((!abort && iterations < this.iterations && error > this.error)) {
 			if (crossValidate && error <= this.crossValidate.testError) {
-				break;
+				break
 			}
 
-			var currentSetSize = set.length;
-			error = 0;
-			iterations++;
+			var currentSetSize = set.length
+			error = 0
+			iterations++
 
 			if (bucketSize > 0) {
-				var currentBucket = Math.floor(iterations / bucketSize);
-				currentRate = this.rate[currentBucket] || currentRate;
+				var currentBucket = Math.floor(iterations / bucketSize)
+				currentRate = this.rate[currentBucket] || currentRate
 			}
 
 			if (typeof this.rate === 'function') {
-				currentRate = this.rate(iterations, lastError);
+				currentRate = this.rate(iterations, lastError)
 			}
 
 			if (crossValidate) {
-				this._trainSet(trainSet, currentRate, cost);
-				error += this.test(testSet).error;
-				currentSetSize = 1;
+				this._trainSet(trainSet, currentRate, cost)
+				error += this.test(testSet).error
+				currentSetSize = 1
 			} else {
-				error += this._trainSet(set, currentRate, cost);
-				currentSetSize = set.length;
+				error += this._trainSet(set, currentRate, cost)
+				currentSetSize = set.length
 			}
 
 			// check error
-			error /= currentSetSize;
-			lastError = error;
+			error /= currentSetSize
+			lastError = error
 
 			if (options) {
 				if (this.schedule && this.schedule.every && iterations %
 					this.schedule.every == 0)
 					abort = this.schedule.do({ error: error, iterations: iterations, rate: currentRate });
 				else if (options.log && iterations % options.log == 0) {
-					console.log('iterations', iterations, 'error', error, 'rate', currentRate);
+					console.log('iterations', iterations, 'error', error, 'rate', currentRate)
 				}
 				;
 				if (options.shuffle)
-					shuffleInplace(set);
+					shuffleInplace(set)
 			}
 		}
 
@@ -146,9 +151,9 @@ export default class Trainer {
 			error: error,
 			iterations: iterations,
 			time: Date.now() - start
-		};
+		}
 
-		return results;
+		return results
 	}
 
 	// trains any given set to a network, using a WebWorker (only for the browser). Returns a Promise of the results.
