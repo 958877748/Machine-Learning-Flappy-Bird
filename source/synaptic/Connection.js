@@ -8,9 +8,9 @@ export let connections = 0
 export default class Connection {
 	/**
 	 * 
-	 * @param {Neuron} from 
-	 * @param {Neuron} to 
-	 * @param {number} weight 
+	 * @param {Neuron} from 输入神经元
+	 * @param {Neuron} to 输出神经元
+	 * @param {number} weight 权重
 	 */
 	constructor(from, to, weight) {
 		if (!from || !to)
