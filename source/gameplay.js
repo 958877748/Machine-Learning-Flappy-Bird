@@ -6,7 +6,7 @@
 window.onload = function () {
 	var game = new Phaser.Game(1280, 720, Phaser.CANVAS, 'game');
 
-	game.state.add('Main', App.Main);
+	game.state.add('Main', Main);
 	game.state.start('Main');
 };
 
@@ -15,127 +15,125 @@ window.onload = function () {
 /* 主程序
 /***********************************************************************************/
 
-var App = {};
+class Main {
+	constructor(game) {
+		this.STATE_INIT = 1
+		this.STATE_START = 2
+		this.STATE_PLAY = 3
+		this.STATE_GAMEOVER = 4
 
-App.Main = function (game) {
-	this.STATE_INIT = 1;
-	this.STATE_START = 2;
-	this.STATE_PLAY = 3;
-	this.STATE_GAMEOVER = 4;
+		this.BARRIER_DISTANCE = 300
+	}
 
-	this.BARRIER_DISTANCE = 300;
-}
+	preload() {
+		this.game.load.spritesheet('imgBird', 'assets/img_bird.png', 36, 36, 20)
+		this.game.load.spritesheet('imgTree', 'assets/img_tree.png', 90, 400, 2)
+		this.game.load.spritesheet('imgButtons', 'assets/img_buttons.png', 110, 40, 3)
 
-App.Main.prototype = {
-	preload: function () {
-		this.game.load.spritesheet('imgBird', 'assets/img_bird.png', 36, 36, 20);
-		this.game.load.spritesheet('imgTree', 'assets/img_tree.png', 90, 400, 2);
-		this.game.load.spritesheet('imgButtons', 'assets/img_buttons.png', 110, 40, 3);
+		this.game.load.image('imgTarget', 'assets/img_target.png')
+		this.game.load.image('imgGround', 'assets/img_ground.png')
+		this.game.load.image('imgPause', 'assets/img_pause.png')
+		this.game.load.image('imgLogo', 'assets/img_logo.png')
 
-		this.game.load.image('imgTarget', 'assets/img_target.png');
-		this.game.load.image('imgGround', 'assets/img_ground.png');
-		this.game.load.image('imgPause', 'assets/img_pause.png');
-		this.game.load.image('imgLogo', 'assets/img_logo.png');
+		this.load.bitmapFont('fnt_chars_black', 'assets/fnt_chars_black.png', 'assets/fnt_chars_black.fnt')
+		this.load.bitmapFont('fnt_digits_blue', 'assets/fnt_digits_blue.png', 'assets/fnt_digits_blue.fnt')
+		this.load.bitmapFont('fnt_digits_green', 'assets/fnt_digits_green.png', 'assets/fnt_digits_green.fnt')
+		this.load.bitmapFont('fnt_digits_red', 'assets/fnt_digits_red.png', 'assets/fnt_digits_red.fnt')
+	}
 
-		this.load.bitmapFont('fnt_chars_black', 'assets/fnt_chars_black.png', 'assets/fnt_chars_black.fnt');
-		this.load.bitmapFont('fnt_digits_blue', 'assets/fnt_digits_blue.png', 'assets/fnt_digits_blue.fnt');
-		this.load.bitmapFont('fnt_digits_green', 'assets/fnt_digits_green.png', 'assets/fnt_digits_green.fnt');
-		this.load.bitmapFont('fnt_digits_red', 'assets/fnt_digits_red.png', 'assets/fnt_digits_red.fnt');
-	},
-
-	create: function () {
+	create() {
 		// 设置缩放模式以覆盖整个屏幕
 		// set scale mode to cover the entire screen
-		this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-		this.scale.pageAlignVertically = true;
-		this.scale.pageAlignHorizontally = true;
+		this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL
+		this.scale.pageAlignVertically = true
+		this.scale.pageAlignHorizontally = true
 
 		// 为舞台的背景设置一个蓝色
 		// set a blue color for the background of the stage
-		this.game.stage.backgroundColor = "#89bfdc";
+		this.game.stage.backgroundColor = "#89bfdc"
 
 		// 如果游戏失去焦点，继续游戏
 		// keep game running if it loses the focus
-		this.game.stage.disableVisibilityChange = true;
+		this.game.stage.disableVisibilityChange = true
 
 		// 启动Phaser arcade物理引擎
 		// start the Phaser arcade physics engine
-		this.game.physics.startSystem(Phaser.Physics.ARCADE);
+		this.game.physics.startSystem(Phaser.Physics.ARCADE)
 
 		// 设定世界的引力
 		// set the gravity of the world
-		this.game.physics.arcade.gravity.y = 1300;
+		this.game.physics.arcade.gravity.y = 1300
 
 		// 创建一个新的遗传算法 10代表总人口 4代表能活到下一代的人口
 		// create a new Genetic Algorithm with a population of 10 units which will be evolving by using 4 top units
-		this.GA = new GeneticAlgorithm(10, 4);
+		this.GA = new GeneticAlgorithm(10, 4)
 
 		// create a BirdGroup which contains a number of Bird objects
-		this.BirdGroup = this.game.add.group();
+		this.BirdGroup = this.game.add.group()
 		for (var i = 0; i < this.GA.max_units; i++) {
-			this.BirdGroup.add(new Bird(this.game, 0, 0, i));
+			this.BirdGroup.add(new Bird(this.game, 0, 0, i))
 		}
 
 		// create a BarrierGroup which contains a number of Tree Groups
 		// (each Tree Group contains a top and bottom Tree object)
-		this.BarrierGroup = this.game.add.group();
+		this.BarrierGroup = this.game.add.group()
 		for (var i = 0; i < 4; i++) {
-			new TreeGroup(this.game, this.BarrierGroup, i);
+			new TreeGroup(this.game, this.BarrierGroup, i)
 		}
 
 		// create a Target Point sprite
-		this.TargetPoint = this.game.add.sprite(0, 0, 'imgTarget');
-		this.TargetPoint.anchor.setTo(0.5);
+		this.TargetPoint = this.game.add.sprite(0, 0, 'imgTarget')
+		this.TargetPoint.anchor.setTo(0.5)
 
 		// create a scrolling Ground object
-		this.Ground = this.game.add.tileSprite(0, this.game.height - 100, this.game.width - 370, 100, 'imgGround');
-		this.Ground.autoScroll(-200, 0);
+		this.Ground = this.game.add.tileSprite(0, this.game.height - 100, this.game.width - 370, 100, 'imgGround')
+		this.Ground.autoScroll(-200, 0)
 
 		// create a BitmapData image for drawing head-up display (HUD) on it
-		this.bmdStatus = this.game.make.bitmapData(370, this.game.height);
-		this.bmdStatus.addToWorld(this.game.width - this.bmdStatus.width, 0);
+		this.bmdStatus = this.game.make.bitmapData(370, this.game.height)
+		this.bmdStatus.addToWorld(this.game.width - this.bmdStatus.width, 0)
 
 		// create text objects displayed in the HUD header
-		new Text(this.game, 1047, 10, "In1  In2  Out", "right", "fnt_chars_black"); // Input 1 | Input 2 | Output
-		this.txtPopulationPrev = new Text(this.game, 1190, 10, "", "right", "fnt_chars_black"); // No. of the previous population
-		this.txtPopulationCurr = new Text(this.game, 1270, 10, "", "right", "fnt_chars_black"); // No. of the current population
+		new Text(this.game, 1047, 10, "In1  In2  Out", "right", "fnt_chars_black") // Input 1 | Input 2 | Output
+		this.txtPopulationPrev = new Text(this.game, 1190, 10, "", "right", "fnt_chars_black") // No. of the previous population
+		this.txtPopulationCurr = new Text(this.game, 1270, 10, "", "right", "fnt_chars_black") // No. of the current population
 
 		// create text objects for each bird to show their info on the HUD
-		this.txtStatusPrevGreen = [];	// array of green text objects to show info of top units from the previous population
-		this.txtStatusPrevRed = [];		// array of red text objects to show info of weak units from the previous population
-		this.txtStatusCurr = [];		// array of blue text objects to show info of all units from the current population
+		this.txtStatusPrevGreen = []	// array of green text objects to show info of top units from the previous population
+		this.txtStatusPrevRed = []		// array of red text objects to show info of weak units from the previous population
+		this.txtStatusCurr = []			// array of blue text objects to show info of all units from the current population
 
 		for (var i = 0; i < this.GA.max_units; i++) {
-			var y = 46 + i * 50;
+			var y = 46 + i * 50
 
 			new Text(this.game, 1110, y, "Fitness:\nScore:", "right", "fnt_chars_black")
-			this.txtStatusPrevGreen.push(new Text(this.game, 1190, y, "", "right", "fnt_digits_green"));
-			this.txtStatusPrevRed.push(new Text(this.game, 1190, y, "", "right", "fnt_digits_red"));
-			this.txtStatusCurr.push(new Text(this.game, 1270, y, "", "right", "fnt_digits_blue"));
+			this.txtStatusPrevGreen.push(new Text(this.game, 1190, y, "", "right", "fnt_digits_green"))
+			this.txtStatusPrevRed.push(new Text(this.game, 1190, y, "", "right", "fnt_digits_red"))
+			this.txtStatusCurr.push(new Text(this.game, 1270, y, "", "right", "fnt_digits_blue"))
 		}
 
 		// create a text object displayed in the HUD footer to show info of the best unit ever born
-		this.txtBestUnit = new Text(this.game, 1095, 580, "", "center", "fnt_chars_black");
+		this.txtBestUnit = new Text(this.game, 1095, 580, "", "center", "fnt_chars_black")
 
 		// create buttons
-		this.btnRestart = this.game.add.button(920, 620, 'imgButtons', this.onRestartClick, this, 0, 0);
-		this.btnMore = this.game.add.button(1040, 620, 'imgButtons', this.onMoreGamesClick, this, 2, 2);
-		this.btnPause = this.game.add.button(1160, 620, 'imgButtons', this.onPauseClick, this, 1, 1);
-		this.btnLogo = this.game.add.button(910, 680, 'imgLogo', this.onMoreGamesClick, this);
+		this.btnRestart = this.game.add.button(920, 620, 'imgButtons', this.onRestartClick, this, 0, 0)
+		this.btnMore = this.game.add.button(1040, 620, 'imgButtons', this.onMoreGamesClick, this, 2, 2)
+		this.btnPause = this.game.add.button(1160, 620, 'imgButtons', this.onPauseClick, this, 1, 1)
+		this.btnLogo = this.game.add.button(910, 680, 'imgLogo', this.onMoreGamesClick, this)
 
 		// create game paused info
-		this.sprPause = this.game.add.sprite(455, 360, 'imgPause');
-		this.sprPause.anchor.setTo(0.5);
-		this.sprPause.kill();
+		this.sprPause = this.game.add.sprite(455, 360, 'imgPause')
+		this.sprPause.anchor.setTo(0.5)
+		this.sprPause.kill()
 
 		// add an input listener that can help us return from being paused
-		this.game.input.onDown.add(this.onResumeClick, this);
+		this.game.input.onDown.add(this.onResumeClick, this)
 
 		// set initial App state
-		this.state = this.STATE_INIT;
-	},
+		this.state = this.STATE_INIT
+	}
 
-	update: function () {
+	update() {
 		switch (this.state) {
 			case this.STATE_INIT: // init genetic algorithm
 				this.GA.reset();
@@ -241,9 +239,9 @@ App.Main.prototype = {
 				this.state = this.STATE_START;
 				break;
 		}
-	},
+	}
 
-	drawStatus: function () {
+	drawStatus() {
 		this.bmdStatus.fill(180, 180, 180); // clear bitmap data by filling it with a gray color
 		this.bmdStatus.rect(0, 0, this.bmdStatus.width, 35, "#8e8e8e"); // draw the HUD header rect
 
@@ -267,35 +265,33 @@ App.Main.prototype = {
 			// draw bird's fitness and score
 			this.txtStatusCurr[bird.index].setText(bird.fitness_curr.toFixed(2) + "\n" + bird.score_curr);
 		}, this);
-	},
+	}
 
-	getNextBarrier: function (index) {
+	getNextBarrier(index) {
 		return this.BarrierGroup.getAt((index + 1) % this.BarrierGroup.length);
-	},
-
-	onDeath: function (bird) {
+	}
+	onDeath(bird) {
 		this.GA.Population[bird.index].fitness = bird.fitness_curr;
 		this.GA.Population[bird.index].score = bird.score_curr;
 
 		bird.death();
 		if (this.BirdGroup.countLiving() == 0) this.state = this.STATE_GAMEOVER;
-	},
+	}
+	onRestartClick() {
+		this.state = this.STATE_INIT
+	}
 
-	onRestartClick: function () {
-		this.state = this.STATE_INIT;
-	},
-
-	onMoreGamesClick: function () {
+	onMoreGamesClick() {
 		window.open("http://www.askforgametask.com", "_blank");
-	},
+	}
 
-	onPauseClick: function () {
+	onPauseClick() {
 		this.game.paused = true;
 		this.btnPause.input.reset();
 		this.sprPause.revive();
-	},
+	}
 
-	onResumeClick: function () {
+	onResumeClick() {
 		if (this.game.paused) {
 			this.game.paused = false;
 			this.btnPause.input.enabled = true;
