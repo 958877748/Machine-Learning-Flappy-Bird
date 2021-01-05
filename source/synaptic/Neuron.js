@@ -6,42 +6,56 @@ let neurons = 0
 // squashing functions
 const squash = {
 	// eq. 5 & 5'
+	/**
+	 * @param {number} x 
+	 * @param {boolean} derivate 
+	 */
 	LOGISTIC: function (x, derivate) {
-		var fx = 1 / (1 + Math.exp(-x));
+		var fx = 1 / (1 + Math.exp(-x))
 		if (!derivate)
-			return fx;
-		return fx * (1 - fx);
+			return fx
+		return fx * (1 - fx)
 	},
 	TANH: function (x, derivate) {
 		if (derivate)
-			return 1 - Math.pow(Math.tanh(x), 2);
-		return Math.tanh(x);
+			return 1 - Math.pow(Math.tanh(x), 2)
+		return Math.tanh(x)
 	},
 	IDENTITY: function (x, derivate) {
-		return derivate ? 1 : x;
+		return derivate ? 1 : x
 	},
 	HLIM: function (x, derivate) {
-		return derivate ? 1 : x > 0 ? 1 : 0;
+		return derivate ? 1 : x > 0 ? 1 : 0
 	},
 	RELU: function (x, derivate) {
 		if (derivate)
-			return x > 0 ? 1 : 0;
-		return x > 0 ? x : 0;
+			return x > 0 ? 1 : 0
+		return x > 0 ? x : 0
 	}
 }
 
 /**
- * 神经元
+ * 神经元是神经网络的基本单位。它们可以连接在一起，或者用于门连接其他神经元。
+ * 神经元基本上可以执行 4 个操作：项目连接、门连接、激活和传播。
  */
 export default class Neuron {
-	static squash = squash;
+	/**
+	 * 压缩函数
+	 */
+	static squash = squash
+
+	/**
+	 * 获取神经元的唯一id
+	 */
+	static uid() {
+		return neurons++
+	}
 
 	constructor() {
 		/**
 		 * 神经元的唯一id
 		 */
 		this.ID = Neuron.uid()
-
 		/**
 		 * 所有连接
 		 */
@@ -50,8 +64,13 @@ export default class Neuron {
 			 * @type {{[x:string]:Connection}} 输入连接
 			 */
 			inputs: {},
+			/**
+			 * @type {{[x:string]:Connection}} 输出连接
+			 */
 			projected: {},
-			/** 门控 */
+			/** 
+			 * @type {{[x:string]:Connection}} 门控
+			 */
 			gated: {}
 		}
 		this.error = {
@@ -73,6 +92,23 @@ export default class Neuron {
 		 * weight = 0 -> not connected
 		 */
 		this.selfconnection = new Connection(this, this, 0)
+		/**
+		 * 挤压功能和偏置
+		 * 默认情况下，神经元使用逻辑Sigmoid 作为其挤压/激活功能，以及随机偏置。您可以按照以下方式更改这些属性：
+		 * 
+		 * var A = new Neuron();
+		 * A.squash = Neuron.squash.TANH;
+		 * A.bias = 1;
+		 * 有 5 个内置的挤压函数，但您也可以创建自己的：
+		 * 
+		 * 神经元. squash. 逻辑
+		 * 神经元. squash. tanH
+		 * 神经元. squash. 身份
+		 * 神经元. squash. hlim
+		 * 神经元. squash. relu
+		 * 请参阅此处的更多挤压函数。
+		 * https://wagenaartje.github.io/neataptic/docs/methods/activation/
+		 */
 		this.squash = Neuron.squash.LOGISTIC
 		this.neighboors = {}
 		/**
@@ -82,16 +118,21 @@ export default class Neuron {
 	}
 
 	/**
-	 * 激活神经元
+	 * 激活
 	 * activate the neuron -
 	 * 当神经元激活时，它会从所有输入连接计算其状态，
 	 * 并使用其激活功能压缩它，并返回输出（激活）。
 	 * 您可以将激活作为参数提供（对输入层中的神经元很有用）。
 	 * 它必须介于 0 和 1 之间的浮点数
+	 * var A = new Neuron();
+	 * var B = new Neuron();
+	 * A.project(B);
+	 * A.activate(0.5); // 0.5
+	 * B.activate(); // 0.3244554645
 	 * @param {number} input 
 	 */
 	activate(input) {
-		// 环境激活（输入神经元）
+		// 环境激活（来自输入神经元）
 		// activation from enviroment (for input neurons)
 		if (typeof input != 'undefined') {
 			this.activation = input
@@ -170,46 +211,74 @@ export default class Neuron {
 	 * 激活后，您可以教神经元什么应该是正确的输出（即训练）。
 	 * 这是通过回侵占错误完成的。
 	 * 若要使用传播方法，您必须提供学习速率和目标值（浮动在 0 和 1 之间）。
+	 * 例如，当神经元 A 激活 1 时，您可以训练神经元 B 以激活 0：
+	 * var A = new Neuron();
+	 * var B = new Neuron();
+	 * A.project(B);
+	 * 
+	 * var learningRate = .3;
+	 * 
+	 * for(var i = 0; i < 20000; i++)
+	 * {
+	 * 		// when A activates 1
+	 * 	 	A.activate(1);
+	 * 		// train B to activate 0
+	 * 		B.activate();
+	 * 		B.propagate(learningRate, 0); 
+	 * }
+	 * 
+	 * // test it
+	 * A.activate(1);
+	 * B.activate(); // 0.006540565760853365
 	 * @param {number} rate 学习速率
 	 * @param {number} target 目标值
 	 */
 	propagate(rate, target) {
+		// 误差累加器
 		// error accumulator
 		var error = 0
 
+		// 这个神经元是否在输出层
 		// whether or not this neuron is in the output layer
 		var isOutput = typeof target != 'undefined'
 
+		// 输出神经元从环境中获得误差
 		// output neurons get their error from the enviroment
 		if (isOutput)
-			this.error.responsibility = this.error.projected = target - this.activation; // Eq. 10
+			// Eq. 10
+			this.error.responsibility = this.error.projected = target - this.activation
 
-		else // the rest of the neuron compute their error responsibilities by backpropagation
-		{
+		// 其余的神经元通过反向传播计算它们的错误责任
+		// the rest of the neuron compute their error responsibilities by backpropagation
+		else {
+
+			// 此神经元投射的所有连接的错误责任
 			// error responsibilities from all the connections projected from this neuron
 			for (var id in this.connections.projected) {
 				var connection = this.connections.projected[id]
 				var neuron = connection.to
 				// Eq. 21
-				error += neuron.error.responsibility * connection.gain * connection.weight;
+				error += neuron.error.responsibility * connection.gain * connection.weight
 			}
 
+			// 预计错误责任
 			// projected error responsibility
-			this.error.projected = this.derivative * error;
+			this.error.projected = this.derivative * error
 
-			error = 0;
+			error = 0
+			// 此神经元选通的所有连接的错误责任
 			// error responsibilities from all the connections gated by this neuron
 			for (var id in this.trace.extended) {
-				var neuron = this.neighboors[id]; // gated neuron
-				var influence = neuron.selfconnection.gater == this ? neuron.old : 0; // if gated neuron's selfconnection is gated by this neuron
+				var neuron = this.neighboors[id] // gated neuron
+				var influence = neuron.selfconnection.gater == this ? neuron.old : 0 // if gated neuron's selfconnection is gated by this neuron
 
 				// index runs over all the connections to the gated neuron that are gated by this neuron
 				for (var input in this.trace.influences[id]) { // captures the effect that the input connection of this neuron have, on a neuron which its input/s is/are gated by this neuron
 					influence += this.trace.influences[id][input].weight * this.trace.influences[
-						neuron.ID][input].from.activation;
+						neuron.ID][input].from.activation
 				}
 				// eq. 22
-				error += neuron.error.responsibility * influence;
+				error += neuron.error.responsibility * influence
 			}
 
 			// gated error responsibility
@@ -241,7 +310,14 @@ export default class Neuron {
 	}
 
 	/**
+	 * 项目
 	 * 神经元可以投射到另一个神经元的连接（即将神经元A与神经元B连接）。以下是其完成：
+	 * var A = new Neuron();
+	 * var B = new Neuron();
+	 * A.project(B); // A now projects a connection to B
+	 * 神经元也可以自我连接：
+	 * A.project(A);
+	 * 方法项目返回一个对象，该对象可由另一个神经元进行门控。Connection
 	 * @param {Neuron} neuron 另一个神经元
 	 * @param {number} weight 权重(0-1)
 	 */
@@ -257,32 +333,41 @@ export default class Neuron {
 		// check if connection already exists
 		var connected = this.connected(neuron)
 		if (connected && connected.type == 'projected') {
+			// 更新连接
 			// update connection
 			if (typeof weight != 'undefined')
-				connected.connection.weight = weight;
+				connected.connection.weight = weight
 			// return existing connection
-			return connected.connection;
+			return connected.connection
 		} else {
+			// 创建新连接
 			// create a new connection
-			var connection = new Connection(this, neuron, weight);
+			var connection = new Connection(this, neuron, weight)
 		}
 
+		// 参考所有的连接和痕迹
 		// reference all the connections and traces
-		this.connections.projected[connection.ID] = connection;
+		this.connections.projected[connection.ID] = connection
 		this.neighboors[neuron.ID] = neuron;
-		neuron.connections.inputs[connection.ID] = connection;
-		neuron.trace.elegibility[connection.ID] = 0;
+		neuron.connections.inputs[connection.ID] = connection
+		neuron.trace.elegibility[connection.ID] = 0
 
 		for (var id in neuron.trace.extended) {
-			var trace = neuron.trace.extended[id];
-			trace[connection.ID] = 0;
+			var trace = neuron.trace.extended[id]
+			trace[connection.ID] = 0
 		}
 
-		return connection;
+		return connection
 	}
 
 	/**
+	 * 门
 	 * 神经元可以门控两个神经元之间的连接，或神经元的自我连接。这允许您创建二阶神经网络体系结构。
+	 * var A = new Neuron();
+	 * var B = new Neuron();
+	 * var connection = A.project(B);
+	 * var C = new Neuron();
+	 * C.gate(connection); // now C gates the connection between A and B
 	 * @param {Connection} connection 
 	 */
 	gate(connection) {
@@ -324,11 +409,15 @@ export default class Neuron {
 	 * @param {Neuron} neuron 另一个神经元
 	 */
 	connected(neuron) {
+		/**
+		 * @type {{type:string,connection:Connection}}
+		 */
 		var result = {
 			type: null,
-			connection: false
+			connection: null
 		}
 
+		// 检查是否自我连接
 		if (this == neuron) {
 			if (this.selfconnected()) {
 				result.type = 'selfconnection'
@@ -825,12 +914,7 @@ export default class Neuron {
 		}
 	}
 
-	/**
-	 * 获取神经元的唯一id
-	 */
-	static uid() {
-		return neurons++
-	}
+
 
 	static quantity() {
 		return {
