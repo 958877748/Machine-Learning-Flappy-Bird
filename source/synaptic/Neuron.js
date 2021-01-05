@@ -69,7 +69,7 @@ export default class Neuron {
 			 */
 			projected: {},
 			/** 
-			 * @type {{[x:string]:Connection}} 门控
+			 * @type {{[x:number]:Connection}} 门控连接
 			 */
 			gated: {}
 		}
@@ -371,17 +371,18 @@ export default class Neuron {
 	 * @param {Connection} connection 
 	 */
 	gate(connection) {
+		// 添加一个连接到门列表
 		// add connection to gated list
 		this.connections.gated[connection.ID] = connection
 
 		var neuron = connection.to
 		if (!(neuron.ID in this.trace.extended)) {
 			// extended trace
-			this.neighboors[neuron.ID] = neuron;
-			var xtrace = this.trace.extended[neuron.ID] = {};
+			this.neighboors[neuron.ID] = neuron
+			var xtrace = this.trace.extended[neuron.ID] = {}
 			for (var id in this.connections.inputs) {
-				var input = this.connections.inputs[id];
-				xtrace[input.ID] = 0;
+				var input = this.connections.inputs[id]
+				xtrace[input.ID] = 0
 			}
 		}
 
@@ -392,7 +393,7 @@ export default class Neuron {
 			this.trace.influences[neuron.ID] = [connection];
 
 		// set gater
-		connection.gater = this;
+		connection.gater = this
 	}
 
 	/**

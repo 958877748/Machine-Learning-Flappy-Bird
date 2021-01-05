@@ -48,6 +48,9 @@ export default class Connection {
 		 * 初始时gij均取值为1，后每次迭代根据权值梯度的变化情况作出调整
 		 */
 		this.gain = 1
+		/**
+		 * @type {Neuron} 门控神经元
+		 */
 		this.gater = null
 	}
 }
