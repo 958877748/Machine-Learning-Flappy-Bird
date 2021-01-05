@@ -6,8 +6,8 @@
 class GeneticAlgorithm {
 	/**
 	 * 
-	 * @param {number} max_units 
-	 * @param {number} top_units 
+	 * @param {number} max_units 人口最大值
+	 * @param {number} top_units 人口精英数量
 	 */
 	constructor(max_units, top_units) {
 		/**
@@ -101,7 +101,7 @@ class GeneticAlgorithm {
 	 * activates the neural network of an unit from the population
 	 * 根据输入计算输出动作
 	 * to calculate an output action according to the inputs
-	 * @param {*} bird
+	 * @param {*} bird 鸟
 	 * @param {*} target
 	 */
 	activateBrain(bird, target) {
@@ -121,7 +121,7 @@ class GeneticAlgorithm {
 		// calculate outputs by activating synaptic neural network of this bird
 		var outputs = this.Population[bird.index].activate(inputs)
 
-		// 如果输出大于0.5，则执行襟翼
+		// 如果输出大于0.5，则执行拍打
 		// perform flap if output is greater than 0.5
 		if (outputs[0] > 0.5)
 			bird.flap()
@@ -236,8 +236,8 @@ class GeneticAlgorithm {
 	 * @param {*} parentB
 	 */
 	crossOver(parentA, parentB) {
-		console.log('parentA', parentA)
-		console.log('parentB', parentB)
+		// console.log('parentA', parentA)
+		// console.log('parentB', parentB)
 		// 找一个交叉点
 		// get a cross over cutting point
 		var cutPoint = this.random(0, parentA.neurons.length - 1)
@@ -288,17 +288,31 @@ class GeneticAlgorithm {
 
 		return gene
 	}
+	/**
+	 * 随机整数
+	 * @param {*} min 
+	 * @param {*} max 
+	 */
 	random(min, max) {
 		return Math.floor(Math.random() * (max - min + 1) + min)
 	}
+	/**
+	 * 随机单位
+	 * @param {Array<any>} array 
+	 */
 	getRandomUnit(array) {
 		return array[this.random(0, array.length - 1)]
 	}
+	/**
+	 * 归一化
+	 * @param {*} value 
+	 * @param {*} max 
+	 */
 	normalize(value, max) {
 		// 将值限制在其最小/最大限制之间
 		// clamp the value between its min/max limits
 		if (value < -max)
-			value = -max;
+			value = -max
 		else if (value > max)
 			value = max
 
